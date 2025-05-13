@@ -55,6 +55,7 @@ while (!userName) {
     if (password === "admin123") {
       isAdmin = true;
       document.getElementById("sidebar").style.display = "block";
+      document.getElementById("adminFilter").style.display = "block";
     } else {
       alert("Palavra-passe incorreta.");
       userName = "";
@@ -65,7 +66,6 @@ while (!userName) {
 userColor = getCorGrupo(userGroup);
 userIcon = createIcon(userColor);
 
-let showAll = false;
 let myMarker = null;
 let otherMarkers = [];
 
@@ -86,23 +86,10 @@ function updateMyLocation(position) {
     .addTo(map)
     .bindPopup("Tu estás aqui");
 
-  if (!showAll) {
-    map.setView([latitude, longitude], 15);
-  }
+  map.setView([latitude, longitude], 15);
 }
 
 function refreshOthers() {
-  const userList = document.getElementById("userList");
-  userList.innerHTML = "";
-  let count = 0;
-
-  if (!showAll) {
-    otherMarkers.forEach(marker => map.removeLayer(marker));
-    otherMarkers = [];
-    document.getElementById("userCount").textContent = 0;
-    return;
-  }
-
   fetch('/get_locations')
     .then(res => res.json())
     .then(data => {
@@ -110,44 +97,55 @@ function refreshOthers() {
       otherMarkers = [];
 
       const agora = Date.now();
+      const userList = document.getElementById("userList");
+      const checkboxList = document.getElementById("checkboxList");
+
+      if (isAdmin) {
+        userList.innerHTML = "";
+        checkboxList.innerHTML = "";
+      }
 
       Object.entries(data).forEach(([user, loc]) => {
-        if (user !== `${userName} - ${userGroup}`) {
-          const grupo = user.includes(" - ") ? user.split(" - ")[1] : "Geral";
-          const cor = getCorGrupo(grupo);
-          const icon = createIcon(cor);
-          const tempo = Math.floor((agora - loc.timestamp * 1000) / 60000);
-          const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
+        const grupo = user.includes(" - ") ? user.split(" - ")[1] : "Geral";
+        const cor = getCorGrupo(grupo);
+        const icon = createIcon(cor);
+        const tempo = Math.floor((agora - loc.timestamp * 1000) / 60000);
+        const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
+        const visivelParaTodos = loc.public === true;
+        const doMesmoGrupo = grupo === userGroup;
 
-          const marker = L.marker([loc.lat, loc.lon], { icon }).bindPopup(`${user}<br><small>Última atualização: ${hora}</small>`);
+        const mostrar = isAdmin || visivelParaTodos || doMesmoGrupo;
+
+        if (user !== `${userName} - ${userGroup}` && mostrar) {
+          const marker = L.marker([loc.lat, loc.lon], { icon }).bindPopup(`${user}<br><small>${hora}</small>`);
           marker.addTo(map);
           otherMarkers.push(marker);
-          count++;
 
           if (isAdmin) {
             const li = document.createElement("li");
-            li.innerHTML = `${user}<br><small>${hora} (${tempo} min)</small> <button onclick="removeUser('${user}')">X</button>`;
+            li.innerHTML = `${user}<br><small>${hora} (${tempo} min)</small>`;
             userList.appendChild(li);
+
+            const div = document.createElement("div");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = visivelParaTodos;
+            checkbox.onchange = () => {
+              fetch('/set_visibility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user, public: checkbox.checked })
+              });
+            };
+            div.appendChild(checkbox);
+            div.appendChild(document.createTextNode(" " + user));
+            checkboxList.appendChild(div);
           }
         }
       });
 
-      document.getElementById("userCount").textContent = count;
+      document.getElementById("userCount").textContent = otherMarkers.length;
     });
-}
-
-document.getElementById("toggleBtn").addEventListener("click", () => {
-  showAll = !showAll;
-  document.getElementById("toggleBtn").innerText = showAll ? "Ver só eu" : "Ver todos";
-  refreshOthers();
-});
-
-function removeUser(name) {
-  fetch('/remove_user', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user: name })
-  }).then(() => refreshOthers());
 }
 
 function sair() {

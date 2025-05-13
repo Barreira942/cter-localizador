@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CTer Localizador</title>
+  <title>CTer Tracker – 2025 NAIIC CTer Santarém</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-providers/leaflet-providers.js"></script>
   <style>
     body, html {
       margin: 0;
@@ -22,29 +21,26 @@
       position: absolute;
       bottom: 20px;
       left: 10px;
-      background: rgba(255,255,255,0.95);
+      background: rgba(255, 255, 255, 0.95);
       padding: 10px;
       border-radius: 10px;
-      max-width: 200px;
+      max-width: 250px;
       z-index: 1000;
       font-size: 14px;
     }
-    #toggleBtn {
+    #adminFilter {
+      display: none;
       position: absolute;
-      top: 10px;
+      top: 110px;
       right: 10px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
+      background: white;
+      padding: 10px;
       border-radius: 8px;
-      padding: 10px 15px;
-      cursor: pointer;
-      font-size: 14px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
       z-index: 1000;
-    }
-    #toggleBtn:hover {
-      background-color: #0056b3;
+      font-size: 14px;
+      max-height: 300px;
+      overflow-y: auto;
     }
     ul {
       list-style: none;
@@ -53,15 +49,39 @@
     li {
       margin-bottom: 4px;
     }
+    h1#tituloApp {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: white;
+      padding: 8px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      font-size: 18px;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
   </style>
 </head>
 <body>
+
+  <h1 id="tituloApp">CTer Tracker – 2025 NAIIC CTer Santarém</h1>
+
   <div id="sidebar">
     <strong>Utilizadores ativos (<span id="userCount">0</span>):</strong>
     <ul id="userList"></ul>
   </div>
-  <button id="toggleBtn">Ver todos</button>
+
+  <div id="adminFilter">
+    <strong>Ver utilizadores:</strong><br>
+    <div id="checkboxList"></div>
+  </div>
+
   <div id="map"></div>
+
   <script src="/static/js/location.js"></script>
+
 </body>
 </html>
