@@ -1,0 +1,1 @@
+(O conteúdo do JavaScript está acima, omitido aqui por espaço, será adicionado agora)

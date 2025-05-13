@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CTer Localizador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-providers/leaflet-providers.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    #sidebar {
+      display: none;
+      position: absolute;
+      bottom: 20px;
+      left: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 200px;
+      z-index: 1000;
+      font-size: 14px;
+    }
+    #toggleBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+    #toggleBtn:hover {
+      background-color: #0056b3;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <strong>Utilizadores ativos (<span id="userCount">0</span>):</strong>
+    <ul id="userList"></ul>
+  </div>
+  <button id="toggleBtn">Ver todos</button>
+  <div id="map"></div>
+  <script src="/static/js/location.js"></script>
+</body>
+</html>
