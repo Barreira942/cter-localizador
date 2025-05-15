@@ -1,10 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
+  <meta charset="UTF-8">
   <title>CTer Tracker – 2025 NAIIC CTer Santarém</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
   <style>
     body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
     #map { height: 100%; width: 100%; }
@@ -64,6 +71,15 @@
   <div id="map"></div>
 
   <script src="/static/js/location.js"></script>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/js/service-worker.js')
+        .then(() => console.log('✔ Service Worker registado'))
+        .catch(error => console.error('✖ Falha ao registar o Service Worker', error));
+    }
+  </script>
 
 </body>
 </html>
