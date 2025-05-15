@@ -75,7 +75,12 @@ function iniciarApp() {
   sairBtn.onclick = sair;
   document.body.appendChild(sairBtn);
 
-  navigator.geolocation.watchPosition(updateMyLocation);
+  navigator.geolocation.watchPosition(updateMyLocation, null, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 10000
+  });
+
   setInterval(refreshOthers, 5000);
 }
 
@@ -118,7 +123,15 @@ function updateMyLocation(position) {
 function desenharTrilho(user) {
   if (linhas[user]) map.removeLayer(linhas[user]);
 
-  if (!mostrarTrilho[user]) return;
+  if (!mostrarTrilho[user]) {
+    if (linhas[user]) {
+      map.removeLayer(linhas[user]);
+      delete linhas[user];
+    }
+    return;
+  }
+
+  if (!trilhos[user] || trilhos[user].length === 0) return;
 
   const cor = getCorGrupo(user.split(" - ")[1] || "Geral");
   linhas[user] = L.polyline(trilhos[user], { color: cor }).addTo(map);
@@ -148,6 +161,7 @@ function refreshOthers() {
         const cor = getCorGrupo(grupo);
         const icon = createIcon(cor);
         const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
+
         const visivel = isAdmin || loc.public || grupo === userGroup;
 
         if (visivel) {
