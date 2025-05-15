@@ -1,6 +1,5 @@
 let map = L.map('map').setView([38.72, -9.14], 13);
 
-// Mapas base
 const mapasBase = {
   "Mapa padrão": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
@@ -19,9 +18,11 @@ const mapasBase = {
 mapasBase["Mapa padrão"].addTo(map);
 L.control.layers(mapasBase).addTo(map);
 
-// Cores
 const coresDisponiveis = ["red", "blue", "green", "orange", "violet", "gold", "black", "grey"];
 const coresPorGrupo = {};
+const trilhos = {}; // histórico de posições por utilizador
+const linhas = {};  // objetos das polylines
+const mostrarTrilho = {}; // quais rastros estão ativos
 
 function getCorGrupo(grupo) {
   if (!coresPorGrupo[grupo]) {
@@ -39,13 +40,19 @@ function createIcon(color) {
   });
 }
 
-// Login
-let userName = "", userGroup = "", isAdmin = false;
-const gruposDisponiveis = ["Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot"];
+let userName = "";
+let userGroup = "";
+let userIcon;
+let isAdmin = false;
+let myMarker = null;
+let otherMarkers = [];
 
-while (!userName) {
+function iniciarApp() {
   userName = prompt("Nome:");
-  if (userName === "NAIIC") {
+  const grupoEl = document.getElementById("grupo");
+  userGroup = grupoEl.value;
+
+  if (userName === "Adm.Barreira") {
     const password = prompt("Password do administrador:");
     if (password === "admin123") {
       isAdmin = true;
@@ -53,28 +60,21 @@ while (!userName) {
       document.getElementById("adminFilter").style.display = "block";
     } else {
       alert("Password incorreta.");
-      userName = "";
+      return;
     }
   }
+
+  document.getElementById("grupoSelect").style.display = "none";
+  const cor = getCorGrupo(userGroup);
+  userIcon = createIcon(cor);
+
+  navigator.geolocation.watchPosition(updateMyLocation);
+  setInterval(refreshOthers, 5000);
 }
-
-while (!userGroup) {
-  const grupoSelecionado = prompt("Escolhe o teu grupo:\n" + gruposDisponiveis.join(", "));
-  if (gruposDisponiveis.includes(grupoSelecionado)) {
-    userGroup = grupoSelecionado;
-  } else {
-    alert("Grupo inválido.");
-  }
-}
-
-const userColor = getCorGrupo(userGroup);
-const userIcon = createIcon(userColor);
-
-let myMarker = null;
-let otherMarkers = [];
 
 function updateMyLocation(position) {
   const { latitude, longitude } = position.coords;
+
   fetch('/update_location', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -82,8 +82,23 @@ function updateMyLocation(position) {
   });
 
   if (myMarker) map.removeLayer(myMarker);
+
   myMarker = L.marker([latitude, longitude], { icon: userIcon })
     .addTo(map).bindPopup("Tu estás aqui");
+
+  if (!trilhos[userName]) trilhos[userName] = [];
+  trilhos[userName].push([latitude, longitude]);
+
+  desenharTrilho(userName);
+}
+
+function desenharTrilho(user) {
+  if (!mostrarTrilho[user] || !trilhos[user]) return;
+
+  if (linhas[user]) map.removeLayer(linhas[user]);
+
+  const cor = getCorGrupo(user.split(" - ")[1] || "Geral");
+  linhas[user] = L.polyline(trilhos[user], { color: cor }).addTo(map);
 }
 
 function refreshOthers() {
@@ -93,49 +108,69 @@ function refreshOthers() {
       otherMarkers.forEach(marker => map.removeLayer(marker));
       otherMarkers = [];
 
-      const agora = Date.now();
       const userList = document.getElementById("userList");
       const checkboxList = document.getElementById("checkboxList");
+      const trailList = document.getElementById("trailList");
 
       if (isAdmin) {
         userList.innerHTML = "";
         checkboxList.innerHTML = "";
+        trailList.innerHTML = "";
       }
 
       Object.entries(data).forEach(([user, loc]) => {
-        const grupo = user.includes(" - ") ? user.split(" - ")[1] : "Geral";
+        if (user === `${userName} - ${userGroup}`) return;
+
+        const grupo = user.split(" - ")[1] || "Geral";
         const cor = getCorGrupo(grupo);
         const icon = createIcon(cor);
-        const tempo = Math.floor((agora - loc.timestamp * 1000) / 60000);
         const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
-        const visivelParaTodos = loc.public === true;
-        const doMesmoGrupo = grupo === userGroup;
-        const mostrar = isAdmin || visivelParaTodos || doMesmoGrupo;
 
-        if (user !== `${userName} - ${userGroup}` && mostrar) {
+        const visivel = isAdmin || loc.public || grupo === userGroup;
+
+        if (visivel) {
           const marker = L.marker([loc.lat, loc.lon], { icon }).bindPopup(`${user}<br><small>${hora}</small>`);
           marker.addTo(map);
           otherMarkers.push(marker);
 
+          if (!trilhos[user]) trilhos[user] = [];
+          trilhos[user].push([loc.lat, loc.lon]);
+
+          if (mostrarTrilho[user]) desenharTrilho(user);
+
           if (isAdmin) {
             const li = document.createElement("li");
-            li.innerHTML = `${user}<br><small>${hora} (${tempo} min)</small> <button onclick="removeUser('${user}')">❌</button>`;
+            li.innerHTML = `${user}<br><small>${hora}</small>`;
             userList.appendChild(li);
 
-            const div = document.createElement("div");
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.checked = visivelParaTodos;
-            checkbox.onchange = () => {
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = loc.public;
+            cb.onchange = () => {
               fetch('/set_visibility', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user, public: checkbox.checked })
+                body: JSON.stringify({ user, public: cb.checked })
               });
             };
-            div.appendChild(checkbox);
-            div.appendChild(document.createTextNode(" " + user));
-            checkboxList.appendChild(div);
+            const label = document.createElement("label");
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(" " + user));
+            checkboxList.appendChild(label);
+            checkboxList.appendChild(document.createElement("br"));
+
+            const cb2 = document.createElement("input");
+            cb2.type = "checkbox";
+            cb2.checked = mostrarTrilho[user] || false;
+            cb2.onchange = () => {
+              mostrarTrilho[user] = cb2.checked;
+              desenharTrilho(user);
+            };
+            const label2 = document.createElement("label");
+            label2.appendChild(cb2);
+            label2.appendChild(document.createTextNode(" Ver rastro de " + user));
+            trailList.appendChild(label2);
+            trailList.appendChild(document.createElement("br"));
           }
         }
       });
@@ -143,33 +178,3 @@ function refreshOthers() {
       document.getElementById("userCount").textContent = otherMarkers.length;
     });
 }
-
-function removeUser(name) {
-  if (confirm(`Tens a certeza que queres remover ${name}?`)) {
-    fetch('/remove_user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user: name })
-    }).then(() => refreshOthers());
-  }
-}
-
-function sair() {
-  fetch('/remove_user', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user: `${userName} - ${userGroup}` })
-  }).then(() => {
-    alert("Removido com sucesso. Fecha a página.");
-    location.reload();
-  });
-}
-
-const sairBtn = document.createElement("button");
-sairBtn.textContent = "Sair";
-sairBtn.style = "position:absolute; bottom:20px; right:10px; z-index:1000; padding:10px 15px; background-color:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer;";
-sairBtn.onclick = sair;
-document.body.appendChild(sairBtn);
-
-navigator.geolocation.watchPosition(updateMyLocation);
-setInterval(refreshOthers, 5000);

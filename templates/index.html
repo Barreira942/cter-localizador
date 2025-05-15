@@ -19,6 +19,11 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 1000;
       font-size: 14px; max-height: 300px; overflow-y: auto;
     }
+    #grupoSelect {
+      position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 1000; background: white; padding: 10px; border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
     ul { list-style: none; padding: 0; }
     li { margin-bottom: 4px; }
     h1#tituloApp {
@@ -32,14 +37,28 @@
 
   <h1 id="tituloApp">CTer Tracker – 2025 NAIIC CTer Santarém</h1>
 
+  <div id="grupoSelect">
+    <label for="grupo">Seleciona o grupo:</label>
+    <select id="grupo">
+      <option value="Alfa">Alfa</option>
+      <option value="Bravo">Bravo</option>
+      <option value="Charlie">Charlie</option>
+      <option value="Delta">Delta</option>
+    </select>
+    <button onclick="iniciarApp()">Entrar</button>
+  </div>
+
   <div id="sidebar">
     <strong>Utilizadores ativos (<span id="userCount">0</span>):</strong>
     <ul id="userList"></ul>
   </div>
 
   <div id="adminFilter">
-    <strong>Ver utilizadores:</strong><br>
+    <strong>Controlo de visibilidade:</strong><br>
     <div id="checkboxList"></div>
+    <hr>
+    <strong>Rastros:</strong><br>
+    <div id="trailList"></div>
   </div>
 
   <div id="map"></div>
