@@ -52,7 +52,8 @@ function iniciarApp() {
   const grupoEl = document.getElementById("grupo");
   userGroup = grupoEl.value;
 
-  if (userName === "Adm.Barreira") {
+  const adminUsers = ["Adm.Barreira", "Adm.Rato", "NAIIC"];
+  if (adminUsers.includes(userName)) {
     const password = prompt("Password do administrador:");
     if (password === "admin123") {
       isAdmin = true;
@@ -74,6 +75,29 @@ function iniciarApp() {
 
 function updateMyLocation(position) {
   const { latitude, longitude } = position.coords;
+
+  fetch('/update_location', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user: `${userName} - ${userGroup}`, lat: latitude, lon: longitude })
+  });
+
+  if (myMarker) map.removeLayer(myMarker);
+
+  myMarker = L.marker([latitude, longitude], { icon: userIcon })
+    .addTo(map).bindPopup("Tu estás aqui");
+
+  // Faz zoom só na primeira vez
+  if (!window._jaFezZoomInicial) {
+    map.setView([latitude, longitude], 15);
+    window._jaFezZoomInicial = true;
+  }
+
+  if (!trilhos[userName]) trilhos[userName] = [];
+  trilhos[userName].push([latitude, longitude]);
+
+  desenharTrilho(userName);
+} = position.coords;
 
   fetch('/update_location', {
     method: 'POST',
