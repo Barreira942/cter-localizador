@@ -1,4 +1,3 @@
-
 let map = L.map('map').setView([38.72, -9.14], 13);
 
 const mapasBase = {
@@ -70,8 +69,25 @@ function iniciarApp() {
   const cor = getCorGrupo(userGroup);
   userIcon = createIcon(cor);
 
+  const sairBtn = document.createElement("button");
+  sairBtn.textContent = "Sair";
+  sairBtn.style = "position:absolute; bottom:20px; right:10px; z-index:1000; padding:10px 15px; background-color:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer;";
+  sairBtn.onclick = sair;
+  document.body.appendChild(sairBtn);
+
   navigator.geolocation.watchPosition(updateMyLocation);
   setInterval(refreshOthers, 5000);
+}
+
+function sair() {
+  fetch('/remove_user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user: `${userName} - ${userGroup}` })
+  }).then(() => {
+    alert("Partilha terminada. Podes fechar a página.");
+    location.reload();
+  });
 }
 
 function updateMyLocation(position) {
@@ -100,9 +116,9 @@ function updateMyLocation(position) {
 }
 
 function desenharTrilho(user) {
-  if (!mostrarTrilho[user] || !trilhos[user]) return;
-
   if (linhas[user]) map.removeLayer(linhas[user]);
+
+  if (!mostrarTrilho[user]) return;
 
   const cor = getCorGrupo(user.split(" - ")[1] || "Geral");
   linhas[user] = L.polyline(trilhos[user], { color: cor }).addTo(map);
@@ -132,7 +148,6 @@ function refreshOthers() {
         const cor = getCorGrupo(grupo);
         const icon = createIcon(cor);
         const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
-
         const visivel = isAdmin || loc.public || grupo === userGroup;
 
         if (visivel) {
@@ -148,6 +163,10 @@ function refreshOthers() {
           if (isAdmin) {
             const li = document.createElement("li");
             li.innerHTML = `${user}<br><small>${hora}</small>`;
+            const btn = document.createElement("button");
+            btn.textContent = "❌";
+            btn.onclick = () => removeUser(user);
+            li.appendChild(btn);
             userList.appendChild(li);
 
             const cb = document.createElement("input");
@@ -184,4 +203,14 @@ function refreshOthers() {
 
       document.getElementById("userCount").textContent = otherMarkers.length;
     });
+}
+
+function removeUser(name) {
+  if (confirm(`Remover ${name} do mapa?`)) {
+    fetch('/remove_user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: name })
+    }).then(() => refreshOthers());
+  }
 }
