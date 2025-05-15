@@ -1,5 +1,6 @@
 let map = L.map('map').setView([38.72, -9.14], 13);
 
+// Mapas base
 const mapasBase = {
   "Mapa padrão": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
@@ -18,6 +19,7 @@ const mapasBase = {
 mapasBase["Mapa padrão"].addTo(map);
 L.control.layers(mapasBase).addTo(map);
 
+// Cores
 const coresDisponiveis = ["red", "blue", "green", "orange", "violet", "gold", "black", "grey"];
 const coresPorGrupo = {};
 
@@ -33,60 +35,55 @@ function createIcon(color) {
   return new L.Icon({
     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.4/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
   });
 }
 
-let userName = "";
-let userGroup = "";
-let userColor = "";
-let userIcon;
-let isAdmin = false;
+// Login
+let userName = "", userGroup = "", isAdmin = false;
+const gruposDisponiveis = ["Alfa", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot"];
 
 while (!userName) {
   userName = prompt("Nome:");
-  userGroup = prompt("Grupo:");
-
-  if (userName === "Adm.Barreira") {
+  if (userName === "NAIIC") {
     const password = prompt("Password do administrador:");
     if (password === "admin123") {
       isAdmin = true;
       document.getElementById("sidebar").style.display = "block";
       document.getElementById("adminFilter").style.display = "block";
     } else {
-      alert("Palavra-passe incorreta.");
+      alert("Password incorreta.");
       userName = "";
     }
   }
 }
 
-userColor = getCorGrupo(userGroup);
-userIcon = createIcon(userColor);
+while (!userGroup) {
+  const grupoSelecionado = prompt("Escolhe o teu grupo:\n" + gruposDisponiveis.join(", "));
+  if (gruposDisponiveis.includes(grupoSelecionado)) {
+    userGroup = grupoSelecionado;
+  } else {
+    alert("Grupo inválido.");
+  }
+}
+
+const userColor = getCorGrupo(userGroup);
+const userIcon = createIcon(userColor);
 
 let myMarker = null;
 let otherMarkers = [];
 
 function updateMyLocation(position) {
   const { latitude, longitude } = position.coords;
-
   fetch('/update_location', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user: `${userName} - ${userGroup}`, lat: latitude, lon: longitude })
   });
 
-  if (myMarker) {
-    map.removeLayer(myMarker);
-  }
-
+  if (myMarker) map.removeLayer(myMarker);
   myMarker = L.marker([latitude, longitude], { icon: userIcon })
-    .addTo(map)
-    .bindPopup("Tu estás aqui");
-
-  map.setView([latitude, longitude], 15);
+    .addTo(map).bindPopup("Tu estás aqui");
 }
 
 function refreshOthers() {
@@ -113,7 +110,6 @@ function refreshOthers() {
         const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
         const visivelParaTodos = loc.public === true;
         const doMesmoGrupo = grupo === userGroup;
-
         const mostrar = isAdmin || visivelParaTodos || doMesmoGrupo;
 
         if (user !== `${userName} - ${userGroup}` && mostrar) {
@@ -123,7 +119,7 @@ function refreshOthers() {
 
           if (isAdmin) {
             const li = document.createElement("li");
-            li.innerHTML = `${user}<br><small>${hora} (${tempo} min)</small>`;
+            li.innerHTML = `${user}<br><small>${hora} (${tempo} min)</small> <button onclick="removeUser('${user}')">❌</button>`;
             userList.appendChild(li);
 
             const div = document.createElement("div");
@@ -148,6 +144,16 @@ function refreshOthers() {
     });
 }
 
+function removeUser(name) {
+  if (confirm(`Tens a certeza que queres remover ${name}?`)) {
+    fetch('/remove_user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user: name })
+    }).then(() => refreshOthers());
+  }
+}
+
 function sair() {
   fetch('/remove_user', {
     method: 'POST',
@@ -161,16 +167,7 @@ function sair() {
 
 const sairBtn = document.createElement("button");
 sairBtn.textContent = "Sair";
-sairBtn.style.position = "absolute";
-sairBtn.style.bottom = "20px";
-sairBtn.style.right = "10px";
-sairBtn.style.zIndex = "1000";
-sairBtn.style.padding = "10px 15px";
-sairBtn.style.backgroundColor = "#dc3545";
-sairBtn.style.color = "white";
-sairBtn.style.border = "none";
-sairBtn.style.borderRadius = "8px";
-sairBtn.style.cursor = "pointer";
+sairBtn.style = "position:absolute; bottom:20px; right:10px; z-index:1000; padding:10px 15px; background-color:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer;";
 sairBtn.onclick = sair;
 document.body.appendChild(sairBtn);
 

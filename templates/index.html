@@ -6,62 +6,25 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: sans-serif;
-    }
-    #map {
-      height: 100%;
-      width: 100%;
-    }
+    body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
+    #map { height: 100%; width: 100%; }
     #sidebar {
-      display: none;
-      position: absolute;
-      bottom: 20px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 10px;
-      border-radius: 10px;
-      max-width: 250px;
-      z-index: 1000;
-      font-size: 14px;
+      display: none; position: absolute; bottom: 20px; left: 10px;
+      background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 10px;
+      max-width: 250px; z-index: 1000; font-size: 14px;
     }
     #adminFilter {
-      display: none;
-      position: absolute;
-      top: 110px;
-      right: 10px;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      z-index: 1000;
-      font-size: 14px;
-      max-height: 300px;
-      overflow-y: auto;
+      display: none; position: absolute; top: 110px; right: 10px;
+      background: white; padding: 10px; border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 1000;
+      font-size: 14px; max-height: 300px; overflow-y: auto;
     }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      margin-bottom: 4px;
-    }
+    ul { list-style: none; padding: 0; }
+    li { margin-bottom: 4px; }
     h1#tituloApp {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      background: white;
-      padding: 8px 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      font-size: 18px;
-      font-weight: bold;
-      font-family: sans-serif;
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      z-index: 1000; background: white; padding: 8px 20px; border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2); font-size: 18px; font-weight: bold;
     }
   </style>
 </head>
