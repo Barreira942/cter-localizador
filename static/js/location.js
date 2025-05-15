@@ -20,9 +20,9 @@ L.control.layers(mapasBase).addTo(map);
 
 const coresDisponiveis = ["red", "blue", "green", "orange", "violet", "gold", "black", "grey"];
 const coresPorGrupo = {};
-const trilhos = {}; // histórico de posições por utilizador
-const linhas = {};  // objetos das polylines
-const mostrarTrilho = {}; // quais rastros estão ativos
+const trilhos = {};
+const linhas = {};
+const mostrarTrilho = {};
 
 function getCorGrupo(grupo) {
   if (!coresPorGrupo[grupo]) {
@@ -87,28 +87,10 @@ function updateMyLocation(position) {
   myMarker = L.marker([latitude, longitude], { icon: userIcon })
     .addTo(map).bindPopup("Tu estás aqui");
 
-  // Faz zoom só na primeira vez
   if (!window._jaFezZoomInicial) {
     map.setView([latitude, longitude], 15);
     window._jaFezZoomInicial = true;
   }
-
-  if (!trilhos[userName]) trilhos[userName] = [];
-  trilhos[userName].push([latitude, longitude]);
-
-  desenharTrilho(userName);
-} = position.coords;
-
-  fetch('/update_location', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user: `${userName} - ${userGroup}`, lat: latitude, lon: longitude })
-  });
-
-  if (myMarker) map.removeLayer(myMarker);
-
-  myMarker = L.marker([latitude, longitude], { icon: userIcon })
-    .addTo(map).bindPopup("Tu estás aqui");
 
   if (!trilhos[userName]) trilhos[userName] = [];
   trilhos[userName].push([latitude, longitude]);
