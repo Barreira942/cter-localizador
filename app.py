@@ -2,12 +2,30 @@ from flask import Flask, render_template, request, jsonify
 import time
 
 app = Flask(__name__)
+
+# Lista de utilizadores e credenciais
+USERS = {
+    "2090786": {"password": "2090786", "admin": True},
+    "2071307": {"password": "2071301", "admin": True},
+    "NAIIC": {"password": "admin123", "admin": True},
+}
+
+# Localizações dos utilizadores
 locations = {}
 visibility = {}
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    user = data.get("user")
+    password = data.get("password")
+    if user in USERS and USERS[user]["password"] == password:
+        return jsonify(success=True, admin=USERS[user]["admin"])
+    return jsonify(success=False)
 
 @app.route("/update_location", methods=["POST"])
 def update_location():
@@ -16,7 +34,6 @@ def update_location():
     lat = data["lat"]
     lon = data["lon"]
     is_public = visibility.get(user, False)
-
     locations[user] = {
         "lat": lat,
         "lon": lon,
