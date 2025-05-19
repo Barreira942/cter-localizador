@@ -60,36 +60,39 @@ function iniciarApp() {
     body: JSON.stringify({ user: userName, password: password })
   }).then(res => res.json())
     .then(data => {
-      if (!data.success) {
+      if (data.success) {
+        if (data.admin) {
+          isAdmin = true;
+          document.getElementById("sidebar").style.display = "block";
+          document.getElementById("adminFilter").style.display = "block";
+          mostrarPainelPendentes();
+        }
+
+        document.getElementById("loginBox").style.display = "none";
+        const cor = getCorGrupo(userGroup);
+        userIcon = createIcon(cor);
+
+        const sairBtn = document.createElement("button");
+        sairBtn.textContent = "Sair";
+        sairBtn.style = "position:absolute; bottom:20px; right:10px; z-index:1000; padding:10px 15px; background-color:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer;";
+        sairBtn.onclick = sair;
+        document.body.appendChild(sairBtn);
+
+        navigator.geolocation.getCurrentPosition(updateMyLocation, null, {
+          enableHighAccuracy: true, maximumAge: 0, timeout: 10000
+        });
+
+        navigator.geolocation.watchPosition(updateMyLocation, null, {
+          enableHighAccuracy: true, maximumAge: 0, timeout: 10000
+        });
+
+        setInterval(refreshOthers, 5000);
+
+      } else if (data.pending) {
+        alert("O teu pedido de acesso foi enviado. Aguarda aprovação de um administrador.");
+      } else {
         alert("Credenciais inválidas.");
-        return;
       }
-
-      if (data.admin) {
-        isAdmin = true;
-        document.getElementById("sidebar").style.display = "block";
-        document.getElementById("adminFilter").style.display = "block";
-      }
-
-      document.getElementById("loginBox").style.display = "none";
-      const cor = getCorGrupo(userGroup);
-      userIcon = createIcon(cor);
-
-      const sairBtn = document.createElement("button");
-      sairBtn.textContent = "Sair";
-      sairBtn.style = "position:absolute; bottom:20px; right:10px; z-index:1000; padding:10px 15px; background-color:#dc3545; color:white; border:none; border-radius:8px; cursor:pointer;";
-      sairBtn.onclick = sair;
-      document.body.appendChild(sairBtn);
-
-      navigator.geolocation.getCurrentPosition(updateMyLocation, null, {
-        enableHighAccuracy: true, maximumAge: 0, timeout: 10000
-      });
-
-      navigator.geolocation.watchPosition(updateMyLocation, null, {
-        enableHighAccuracy: true, maximumAge: 0, timeout: 10000
-      });
-
-      setInterval(refreshOthers, 5000);
     });
 }
 
@@ -128,5 +131,89 @@ function updateMyLocation(position) {
 }
 
 function refreshOthers() {
-  // continua com as funções anteriores de atualização...
+  fetch('/get_locations')
+    .then(res => res.json())
+    .then(data => {
+      otherMarkers.forEach(marker => map.removeLayer(marker));
+      otherMarkers = [];
+
+      const userList = document.getElementById("userList");
+      const checkboxList = document.getElementById("checkboxList");
+      const trailList = document.getElementById("trailList");
+
+      if (isAdmin) {
+        userList.innerHTML = "";
+        checkboxList.innerHTML = "";
+        trailList.innerHTML = "";
+      }
+
+      Object.entries(data).forEach(([user, loc]) => {
+        if (user === userFullName) return;
+
+        const grupo = user.split(" - ")[1] || "Geral";
+        const cor = getCorGrupo(grupo);
+        const icon = createIcon(cor);
+        const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
+        const visivel = isAdmin || loc.public || grupo === userGroup;
+
+        if (visivel) {
+          const marker = L.marker([loc.lat, loc.lon], { icon }).bindPopup(`${user}<br><small>${hora}</small>`);
+          marker.addTo(map);
+          otherMarkers.push(marker);
+        }
+      });
+
+      document.getElementById("userCount").textContent = otherMarkers.length;
+    });
+}
+
+function mostrarPainelPendentes() {
+  fetch('/get_pending_users')
+    .then(res => res.json())
+    .then(users => {
+      if (users.length === 0) return;
+
+      const painel = document.createElement("div");
+      painel.style = "position:absolute; top:60px; left:10px; background:white; padding:10px; border-radius:8px; z-index:1000; box-shadow:0 0 10px rgba(0,0,0,0.2);";
+      painel.innerHTML = "<strong>Pedidos pendentes:</strong><br>";
+
+      users.forEach(user => {
+        const linha = document.createElement("div");
+        linha.textContent = user + " ";
+
+        const btnOk = document.createElement("button");
+        btnOk.textContent = "✅";
+        btnOk.onclick = () => {
+          fetch('/approve_user', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user })
+          }).then(() => {
+            alert("Utilizador aprovado!");
+            painel.remove();
+            mostrarPainelPendentes();
+          });
+        };
+
+        const btnNo = document.createElement("button");
+        btnNo.textContent = "❌";
+        btnNo.onclick = () => {
+          fetch('/reject_user', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user })
+          }).then(() => {
+            alert("Utilizador rejeitado.");
+            painel.remove();
+            mostrarPainelPendentes();
+          });
+        };
+
+        linha.appendChild(btnOk);
+        linha.appendChild(btnNo);
+        painel.appendChild(linha);
+      });
+
+      document.body.appendChild(painel);
+    });
 }
