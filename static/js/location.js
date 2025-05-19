@@ -161,6 +161,36 @@ function refreshOthers() {
           marker.addTo(map);
           otherMarkers.push(marker);
         }
+
+        if (isAdmin) {
+          const li = document.createElement("li");
+          li.textContent = user;
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = loc.public;
+          cb.onchange = () => {
+            fetch("/set_visibility", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user, public: cb.checked })
+            });
+          };
+          li.prepend(cb);
+
+          const btn = document.createElement("button");
+          btn.textContent = "❌";
+          btn.onclick = () => {
+            fetch("/remove_user", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user })
+            }).then(refreshOthers);
+          };
+          li.appendChild(btn);
+
+          checkboxList.appendChild(li);
+        }
       });
 
       document.getElementById("userCount").textContent = otherMarkers.length;
