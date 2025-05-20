@@ -1,3 +1,5 @@
+// location.js completo com agrupamento por equipa, rastos funcionais e atualização de pedidos pendentes
+
 let map = L.map('map').setView([38.72, -9.14], 13);
 
 const mapasBase = {
@@ -66,6 +68,7 @@ function iniciarApp() {
           document.getElementById("sidebar").style.display = "block";
           document.getElementById("adminFilter").style.display = "block";
           mostrarPainelPendentes();
+          setInterval(mostrarPainelPendentes, 10000);
         }
 
         document.getElementById("loginBox").style.display = "none";
@@ -147,6 +150,8 @@ function refreshOthers() {
         trailList.innerHTML = "";
       }
 
+      const grupos = {};
+
       Object.entries(data).forEach(([user, loc]) => {
         if (user === userFullName) return;
 
@@ -155,6 +160,17 @@ function refreshOthers() {
         const icon = createIcon(cor);
         const hora = new Date(loc.timestamp * 1000).toLocaleTimeString();
         const visivel = isAdmin || loc.public || grupo === userGroup;
+
+        if (!grupos[grupo]) grupos[grupo] = [];
+        grupos[grupo].push(user);
+
+        if (!trilhos[user]) trilhos[user] = [];
+        trilhos[user].push([loc.lat, loc.lon]);
+
+        if (mostrarTrilho[user]) {
+          if (linhas[user]) map.removeLayer(linhas[user]);
+          linhas[user] = L.polyline(trilhos[user], { color: cor }).addTo(map);
+        }
 
         if (visivel) {
           const marker = L.marker([loc.lat, loc.lon], { icon }).bindPopup(`${user}<br><small>${hora}</small>`);
@@ -190,8 +206,33 @@ function refreshOthers() {
           li.appendChild(btn);
 
           checkboxList.appendChild(li);
+
+          const cbTrilho = document.createElement("input");
+          cbTrilho.type = "checkbox";
+          cbTrilho.checked = !!mostrarTrilho[user];
+          cbTrilho.onchange = () => {
+            mostrarTrilho[user] = cbTrilho.checked;
+            refreshOthers();
+          };
+          trailList.appendChild(cbTrilho);
+          trailList.append(user + " ");
+          trailList.appendChild(document.createElement("br"));
         }
       });
+
+      if (isAdmin) {
+        Object.entries(grupos).forEach(([grupo, users]) => {
+          const grupoTitulo = document.createElement("strong");
+          grupoTitulo.textContent = `Equipa: ${grupo}`;
+          userList.appendChild(grupoTitulo);
+          userList.appendChild(document.createElement("br"));
+          users.forEach(user => {
+            const li = document.createElement("li");
+            li.textContent = user;
+            userList.appendChild(li);
+          });
+        });
+      }
 
       document.getElementById("userCount").textContent = otherMarkers.length;
     });
@@ -201,9 +242,13 @@ function mostrarPainelPendentes() {
   fetch('/get_pending_users')
     .then(res => res.json())
     .then(users => {
+      const anterior = document.getElementById("painelPendentes");
+      if (anterior) anterior.remove();
+
       if (users.length === 0) return;
 
       const painel = document.createElement("div");
+      painel.id = "painelPendentes";
       painel.style = "position:absolute; top:60px; left:10px; background:white; padding:10px; border-radius:8px; z-index:1000; box-shadow:0 0 10px rgba(0,0,0,0.2);";
       painel.innerHTML = "<strong>Pedidos pendentes:</strong><br>";
 
